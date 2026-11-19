@@ -3,8 +3,10 @@ import { loadEnv } from "./env.js";
 import { ingestPaths } from "./ingest.js";
 import { loadIntoPostgres } from "./postgres.js";
 import { onThisDay, searchEntries } from "./search.js";
+import { startServer } from "./server.js";
 import { writeEntries, readEntries } from "./store.js";
 import { summarize } from "./summary.js";
+import { embedMissing } from "./vectors.js";
 
 const DEFAULT_OUT = "data/entries.jsonl";
 
@@ -58,12 +60,18 @@ try {
     const entries = readEntries(out);
     await loadIntoPostgres(entries);
     console.log(`loaded ${entries.length} entries into Postgres`);
+  } else if (command === "embed") {
+    await embedMissing(readEntries(out), "data/embeddings.json");
+  } else if (command === "serve") {
+    startServer();
   } else {
     console.log(`Usage:
   npm run ingest
   npm run inspect
+  npm run dev
   npm run search -- 面包
   npm run on-this-day -- --month 11 --day 19
+  npm run embed
   npm run db:load`);
     process.exitCode = command ? 1 : 0;
   }

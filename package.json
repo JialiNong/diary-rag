@@ -11,6 +11,8 @@
     "search": "tsx src/cli.ts search",
     "on-this-day": "tsx src/cli.ts on-this-day",
     "inspect": "tsx src/cli.ts inspect",
+    "dev": "tsx src/cli.ts serve",
+    "embed": "tsx src/cli.ts embed",
     "db:load": "tsx src/cli.ts db:load",
     "test": "tsx --test test/*.test.ts"
   },

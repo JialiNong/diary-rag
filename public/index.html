@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Diary</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,460;8..60,600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #1a2332;
+        --muted: #5d6c78;
+        --paper: #e4ebef;
+        --sheet: #f7fafb;
+        --line: #d3dde3;
+        --date: #0c5c62;
+        --mark: #d5efe6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Outfit, "Avenir Next", sans-serif;
+        font-size: 1.05rem;
+      }
+      .sheet {
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 2.25rem 1.25rem 5rem;
+      }
+      .lang, .modes {
+        display: flex;
+        gap: 1.1rem;
+        margin: 0;
+        padding: 0;
+      }
+      .lang { margin-bottom: 1.75rem; }
+      button, input { font: inherit; color: inherit; }
+      button {
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 0.15rem 0 0.3rem;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      button[aria-pressed="true"] {
+        color: var(--ink);
+        border-bottom-color: var(--date);
+      }
+      button:focus-visible, input:focus-visible {
+        outline: 2px solid var(--date);
+        outline-offset: 3px;
+      }
+      h1 {
+        margin: 0 0 1.25rem;
+        font-family: "Source Serif 4", Georgia, serif;
+        font-weight: 600;
+        font-size: 3.2rem;
+        letter-spacing: -0.03em;
+        line-height: 0.95;
+      }
+      form {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        margin: 0 0 0.9rem;
+        border-bottom: 1px solid var(--ink);
+      }
+      input[type="search"] {
+        flex: 1;
+        width: 100%;
+        border: none;
+        background: transparent;
+        border-radius: 0;
+        padding: 0.45rem 0;
+        font-size: 1.2rem;
+      }
+      #go {
+        border: none;
+        color: var(--date);
+        padding: 0.45rem 0;
+      }
+      input[type="search"]::-webkit-search-cancel-button { display: none; }
+      .modes { margin-bottom: 0.8rem; }
+      #status {
+        min-height: 1.4em;
+        color: var(--muted);
+        margin: 0 0 0.4rem;
+      }
+      .entry {
+        padding: 1.6rem 0 0.4rem;
+        border-top: 1px solid var(--line);
+      }
+      .when {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+      }
+      time {
+        font-family: "Source Serif 4", Georgia, serif;
+        font-size: 1.65rem;
+        font-weight: 600;
+        color: var(--date);
+      }
+      .source, .week {
+        color: var(--muted);
+        margin: 0;
+      }
+      .week { margin: 0.15rem 0 0.7rem; }
+      .body {
+        font-family: "Source Serif 4", Georgia, serif;
+        font-size: 1.12rem;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        margin: 0.8rem 0 0.4rem;
+      }
+      mark {
+        background: var(--mark);
+        color: inherit;
+        padding: 0 0.1em;
+      }
+      .note {
+        font-family: "Source Serif 4", Georgia, serif;
+        font-size: 1.2rem;
+        line-height: 1.5;
+        margin: 1.5rem 0;
+      }
+      @media (max-width: 640px) {
+        h1 { font-size: 2.5rem; }
+        .sheet { padding-top: 1.4rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <div class="lang" role="tablist">
+        <button type="button" id="lang-en" data-lang="en" role="tab" aria-pressed="true">English</button>
+        <button type="button" id="lang-zh" data-lang="zh" role="tab" aria-pressed="false">中文</button>
+      </div>
+      <h1 id="title">Diary</h1>
+      <form id="form">
+        <label class="visually-hidden" id="label" for="q">Search what you wrote</label>
+        <input id="q" type="search" name="q" autocomplete="off" placeholder="Search what you wrote" />
+        <button id="go" type="submit">Search</button>
+      </form>
+      <div class="modes" role="tablist">
+        <button type="button" id="mode-word" data-mode="word" role="tab" aria-pressed="true">Exact words</button>
+        <button type="button" id="mode-similar" data-mode="similar" role="tab" aria-pressed="false">Similar meaning</button>
+        <button type="button" id="today">This day</button>
+      </div>
+      <p id="status" aria-live="polite"></p>
+      <main id="results"></main>
+    </div>
+    <style>
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+    </style>
+    <script>
+      const copy = {
+        en: {
+          title: "Diary",
+          placeholder: "Search what you wrote",
+          go: "Search",
+          words: "Exact words",
+          similar: "Similar meaning",
+          today: "This day",
+          emptyLibrary: "Nothing is imported yet. Run npm run ingest, then refresh this page.",
+          none: "Nothing matched.",
+          missing: "Similar search is not ready. Install Ollama, run ollama pull qwen3-embedding:0.6b, then npm run embed.",
+          failed: "The embedding model did not answer. Check that Ollama is running.",
+          undated: "Undated",
+          loaded: (entries, embedded) =>
+            embedded > 0
+              ? `${entries} entries. Similar search is ready.`
+              : `${entries} entries. Exact words work now. Similar search needs the embedding model.`,
+          showing: (shown, total) => (shown === total ? `${total} entries` : `${shown} of ${total}`),
+          week: (start, end) => `Week of ${start} to ${end}`,
+        },
+        zh: {
+          title: "日记",
+          placeholder: "搜索你写过的话",
+          go: "搜索",
+          words: "原词",
+          similar: "意思相近",
+          today: "去年今日",
+          emptyLibrary: "还没有导入。先运行 npm run ingest，再刷新这个页面。",
+          none: "没有找到。",
+          missing: "意思相近还不能用。先安装 Ollama，运行 ollama pull qwen3-embedding:0.6b，再运行 npm run embed。",
+          failed: "嵌入模型没有回应。先确认 Ollama 在运行。",
+          undated: "没有日期",
+          loaded: (entries, embedded) =>
+            embedded > 0
+              ? `${entries} 条。意思相近已经可用。`
+              : `${entries} 条。现在可以按原词搜。意思相近需要先做嵌入。`,
+          showing: (shown, total) => (shown === total ? `${total} 条` : `显示 ${shown} / ${total}`),
+          week: (start, end) => `${start} 至 ${end} 这一周`,
+        },
+      };
+
+      const state = {
+        lang: localStorage.getItem("diary-lang") === "zh" ? "zh" : "en",
+        mode: "word",
+        status: null,
+      };
+
+      const results = document.querySelector("#results");
+      const status = document.querySelector("#status");
+      const input = document.querySelector("#q");
+
+      document.querySelectorAll("[data-lang]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.lang = button.dataset.lang;
+          localStorage.setItem("diary-lang", state.lang);
+          applyCopy();
+          renderStatus();
+        });
+      });
+      document.querySelectorAll("[data-mode]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.mode = button.dataset.mode;
+          applyCopy();
+          if (input.value.trim()) search();
+        });
+      });
+      document.querySelector("#form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        search();
+      });
+      document.querySelector("#today").addEventListener("click", () => loadToday());
+
+      applyCopy();
+      loadStatus();
+
+      function text() {
+        return copy[state.lang];
+      }
+
+      function applyCopy() {
+        const t = text();
+        document.documentElement.lang = state.lang === "zh" ? "zh-Hans" : "en";
+        document.title = t.title;
+        document.querySelector("#title").textContent = t.title;
+        input.placeholder = t.placeholder;
+        document.querySelector("#label").textContent = t.placeholder;
+        document.querySelector("#go").textContent = t.go;
+        document.querySelector("#mode-word").textContent = t.words;
+        document.querySelector("#mode-similar").textContent = t.similar;
+        document.querySelector("#today").textContent = t.today;
+        document.querySelectorAll("[data-lang]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.lang === state.lang));
+        });
+        document.querySelectorAll("[data-mode]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.mode === state.mode));
+        });
+      }
+
+      async function loadStatus() {
+        const response = await fetch("/api/status");
+        state.status = await response.json();
+        renderStatus();
+        if (state.status.entries === 0) showNote(text().emptyLibrary);
+      }
+
+      function renderStatus() {
+        if (!state.status) return;
+        status.textContent = text().loaded(state.status.entries, state.status.embedded);
+      }
+
+      async function search() {
+        const q = input.value.trim();
+        if (!q) return;
+        const response = await fetch(`/api/search?mode=${state.mode}&q=${encodeURIComponent(q)}`);
+        const payload = await response.json();
+        paint(payload, q);
+      }
+
+      async function loadToday() {
+        const response = await fetch("/api/today");
+        const payload = await response.json();
+        paint(payload, "");
+      }
+
+      function paint(payload, query) {
+        const t = text();
+        results.replaceChildren();
+        if (payload.note === "embeddings-missing") {
+          status.textContent = "";
+          showNote(t.missing);
+          return;
+        }
+        if (payload.note === "embed-failed") {
+          status.textContent = "";
+          showNote(t.failed);
+          return;
+        }
+        if (!payload.hits || payload.hits.length === 0) {
+          status.textContent = "";
+          showNote(state.status && state.status.entries === 0 ? t.emptyLibrary : t.none);
+          return;
+        }
+        status.textContent = t.showing(payload.hits.length, payload.total);
+        for (const hit of payload.hits) results.append(renderEntry(hit, query));
+      }
+
+      function showNote(message) {
+        const p = document.createElement("p");
+        p.className = "note";
+        p.textContent = message;
+        results.replaceChildren(p);
+      }
+
+      function renderEntry(hit, query) {
+        const article = document.createElement("article");
+        article.className = "entry";
+        const when = document.createElement("div");
+        when.className = "when";
+        const time = document.createElement("time");
+        time.dateTime = hit.day || "";
+        time.textContent = formatDay(hit.day);
+        const source = document.createElement("p");
+        source.className = "source";
+        source.textContent = clock(hit) ? `${hit.source} ${clock(hit)}` : hit.source;
+        when.append(time, source);
+        article.append(when);
+        if (hit.weekStart && hit.weekEnd) {
+          const week = document.createElement("p");
+          week.className = "week";
+          week.textContent = text().week(formatDay(hit.weekStart), formatDay(hit.weekEnd));
+          article.append(week);
+        }
+        const body = document.createElement("div");
+        body.className = "body";
+        fillBody(body, hit.body, state.mode === "word" ? query : "");
+        article.append(body);
+        return article;
+      }
+
+      function fillBody(element, value, query) {
+        if (!query) {
+          element.textContent = value;
+          return;
+        }
+        const lower = value.toLowerCase();
+        const needle = query.toLowerCase();
+        let index = 0;
+        while (index < value.length) {
+          const at = lower.indexOf(needle, index);
+          if (at === -1) {
+            element.append(value.slice(index));
+            break;
+          }
+          if (at > index) element.append(value.slice(index, at));
+          const mark = document.createElement("mark");
+          mark.textContent = value.slice(at, at + query.length);
+          element.append(mark);
+          index = at + query.length;
+        }
+      }
+
+      function formatDay(day) {
+        if (!day) return text().undated;
+        const [year, month, date] = day.split("-").map(Number);
+        return new Intl.DateTimeFormat(state.lang === "zh" ? "zh-Hans" : "en", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }).format(new Date(year, month - 1, date));
+      }
+
+      function clock(hit) {
+        if (!hit.occurredAt || hit.occurredAt.endsWith("T00:00:00")) return "";
+        return hit.occurredAt.slice(11, 16);
+      }
+    </script>
+  </body>
+</html>
