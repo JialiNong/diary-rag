@@ -1,0 +1,27 @@
+{
+  "name": "diary-rag",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "ingest": "tsx src/cli.ts ingest",
+    "search": "tsx src/cli.ts search",
+    "on-this-day": "tsx src/cli.ts on-this-day",
+    "inspect": "tsx src/cli.ts inspect",
+    "db:load": "tsx src/cli.ts db:load",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "node-html-parser": "^7.0.1",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "@types/pg": "^8.15.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
